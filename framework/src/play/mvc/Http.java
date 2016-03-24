@@ -267,6 +267,10 @@ public class Http {
          */
         public transient Class<? extends Controller> controllerClass;
         /**
+         * The instance of invoked controller in case it uses non-static action methods.
+         */
+        public transient Controller controllerInstance;
+        /**
          * Free space to store your request specific data
          */
         public Map<String, Object> args = new HashMap<String, Object>(16);
@@ -390,7 +394,7 @@ public class Http {
                 }
             }
 
-            if (Play.configuration.getProperty("XForwardedOverwriteDomainAndPort", "true").toLowerCase().equals("true") && this.host != null
+            if (Play.configuration.getProperty("XForwardedOverwriteDomainAndPort", "false").toLowerCase().equals("true") && this.host != null
                     && !this.host.equals(_host)) {
                 if (this.host.contains(":")) {
                     final String[] hosts = this.host.split(":");
