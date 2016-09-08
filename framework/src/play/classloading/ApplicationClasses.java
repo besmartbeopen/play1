@@ -30,13 +30,13 @@ public class ApplicationClasses {
     /**
      * Cache of all compiled classes
      */
-    Map<String, ApplicationClass> classes = new HashMap<String, ApplicationClass>();
+    Map<String, ApplicationClass> classes = new HashMap<>();
 
     /**
      * Clear the classes cache
      */
     public void clear() {
-        classes = new HashMap<String, ApplicationClass>();
+        classes = new HashMap<>();
     }
 
     /**
@@ -45,14 +45,13 @@ public class ApplicationClasses {
      * @return The ApplicationClass or null
      */
     public ApplicationClass getApplicationClass(String name) {
-        VirtualFile javaFile = getJava(name);
-        if(javaFile != null){
-            if (!classes.containsKey(name)) {
-                classes.put(name, new ApplicationClass(name));
+        if (!classes.containsKey(name)) {
+            VirtualFile javaFile = getJava(name);
+            if (javaFile != null) {
+                classes.put(name, new ApplicationClass(name, javaFile));
             }
-            return classes.get(name);
         }
-        return null;
+        return classes.get(name);
     }
 
     /**
@@ -61,9 +60,9 @@ public class ApplicationClasses {
      * @return A list of application classes.
      */
     public List<ApplicationClass> getAssignableClasses(Class<?> clazz) {
-        List<ApplicationClass> results = new ArrayList<ApplicationClass>();
+        List<ApplicationClass> results = new ArrayList<>();
         if (clazz != null) {
-            for (ApplicationClass applicationClass : new ArrayList<ApplicationClass>(classes.values())) {
+            for (ApplicationClass applicationClass : new ArrayList<>(classes.values())) {
                 if (!applicationClass.isClass()) {
                     continue;
                 }
@@ -89,7 +88,7 @@ public class ApplicationClasses {
      * @return A list of application classes.
      */
     public List<ApplicationClass> getAnnotatedClasses(Class<? extends Annotation> clazz) {
-        List<ApplicationClass> results = new ArrayList<ApplicationClass>();
+        List<ApplicationClass> results = new ArrayList<>();
         for (ApplicationClass applicationClass : classes.values()) {
             if (!applicationClass.isClass()) {
                 continue;
@@ -111,7 +110,7 @@ public class ApplicationClasses {
      * @return All loaded classes
      */
     public List<ApplicationClass> all() {
-        return new ArrayList<ApplicationClass>(classes.values());
+        return new ArrayList<>(classes.values());
     }
 
     /**
@@ -190,15 +189,19 @@ public class ApplicationClasses {
         }
 
         public ApplicationClass(String name) {
+            this(name, getJava(name));
+        }
+
+        public ApplicationClass(String name, VirtualFile javaFile) {
             this.name = name;
-            this.javaFile = getJava(name);
+            this.javaFile = javaFile;
             this.refresh();
         }
 
         /**
          * Need to refresh this class !
          */
-        public void refresh() {
+        public final void refresh() {
             if (this.javaFile != null) {
                 this.javaSource = this.javaFile.contentAsString();
             }
@@ -224,7 +227,7 @@ public class ApplicationClasses {
                 // If a PlayPlugin is present in the application, it is loaded when other plugins are loaded.
                 // All plugins must be loaded before we can start enhancing.
                 // This is a problem when loading PlayPlugins bundled as regular app-class since it uses the same classloader
-                // as the other (soon to be) enhanched play-app-classes.
+                // as the other (soon to be) enhanced play-app-classes.
                 boolean shouldEnhance = true;
                 try {
                     CtClass ctClass = enhanceChecker_classPool.makeClass(new ByteArrayInputStream(this.enhancedByteCode));
@@ -242,17 +245,13 @@ public class ApplicationClasses {
             if (System.getProperty("precompile") != null) {
                 try {
                     // emit bytecode to standard class layout as well
-                    File f = Play.getFile("precompiled/java/" + (name.replace(".", "/")) + ".class");
+                    File f = Play.getFile("precompiled/java/" + name.replace(".", "/") + ".class");
                     f.getParentFile().mkdirs();
-                    FileOutputStream fos = new FileOutputStream(f);
-                    try {
+                    try (FileOutputStream fos = new FileOutputStream(f)) {
                         fos.write(this.enhancedByteCode);
                     }
-                    finally {
-                        fos.close();
-                    }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Logger.error(e, "Failed to write precompiled class %s to disk", name);
                 }
             }
             return this.enhancedByteCode;

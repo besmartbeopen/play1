@@ -356,7 +356,7 @@ public class WSUrlFetch implements WSImpl {
 
         @Override
         public List<Header> getHeaders() {
-            List<Header> result = new ArrayList<Header>();
+            List<Header> result = new ArrayList<>();
             for (String key : headersMap.keySet()) {
                 result.add(new Header(key, headersMap.get(key)));
             }
@@ -371,6 +371,15 @@ public class WSUrlFetch implements WSImpl {
         @Override
         public String getString() {
             return body;
+        }
+
+        @Override
+        public String getString(String encoding) {
+            try {
+                return new String(body.getBytes(), encoding);
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         /**
