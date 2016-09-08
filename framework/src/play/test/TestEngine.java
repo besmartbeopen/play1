@@ -32,6 +32,7 @@ import play.vfs.VirtualFile;
 public class TestEngine {
 
     private final static class ClassNameComparator implements Comparator<Class> {
+        @Override
         public int compare(Class aClass, Class bClass) {
             return aClass.getName().compareTo(bClass.getName());
         }
@@ -42,9 +43,9 @@ public class TestEngine {
     public static ExecutorService functionalTestsExecutor = Executors.newSingleThreadExecutor();
 
     public static List<Class> allUnitTests() {
-        List<Class> classes = Play.classloader.getAssignableClasses(Assert.class);
-        Collection<Class> pluginClasses = Play.pluginCollection.getUnitTests();
-        classes.addAll(pluginClasses);
+        List<Class> classes = new ArrayList<>();
+        classes.addAll(Play.classloader.getAssignableClasses(Assert.class));
+        classes.addAll(Play.pluginCollection.getUnitTests());
         for (ListIterator<Class> it = classes.listIterator(); it.hasNext();) {
             Class c = it.next();
             if (Modifier.isAbstract(c.getModifiers())) {
@@ -60,9 +61,10 @@ public class TestEngine {
     }
 
     public static List<Class> allFunctionalTests() {
-        List<Class> classes = Play.classloader.getAssignableClasses(FunctionalTest.class);
-        Collection<Class> pluginClasses = Play.pluginCollection.getFunctionalTests();
-        classes.addAll(pluginClasses);
+        List<Class> classes = new ArrayList<>();
+        classes.addAll(Play.classloader.getAssignableClasses(FunctionalTest.class));
+        classes.addAll(Play.pluginCollection.getFunctionalTests());
+        
         for (ListIterator<Class> it = classes.listIterator(); it.hasNext();) {
             if (Modifier.isAbstract(it.next().getModifiers())) {
                 it.remove();
@@ -81,7 +83,7 @@ public class TestEngine {
     }
 
     public static List<String> allSeleniumTests() {
-        List<String> results = new ArrayList<String>();
+        List<String> results = new ArrayList<>();
         seleniumTests("test", results);
         for (VirtualFile root : Play.roots) {
             seleniumTests(root.relativePath() + "/test", results);
@@ -168,12 +170,12 @@ public class TestEngine {
     }
 
     @SuppressWarnings("unchecked")
-    public static TestResults run(final String name) {
-        final TestResults testResults = new TestResults();
+    public static TestResults run(String name) {
+        TestResults testResults = new TestResults();
 
         try {
             // Load test class
-            final Class testClass = Play.classloader.loadClass(name);
+            Class testClass = Play.classloader.loadClass(name);
                  
             initTest(testClass);
             
@@ -250,7 +252,7 @@ public class TestEngine {
 
     public static class TestResults {
 
-        public List<TestResult> results = new ArrayList<TestResult>();
+        public List<TestResult> results = new ArrayList<>();
         public boolean passed = true;
         public int success = 0;
         public int errors = 0;

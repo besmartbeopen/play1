@@ -157,7 +157,7 @@ public class JPAPlugin extends PlayPlugin {
                       Logger.debug("Add JPA Model : %s to db %s", clazz, dbName);
                     }         
                 } catch (Exception e) {
-                    Logger.warn("JPA -> Entity not found: %s", entity);
+                    Logger.warn(e, "JPA -> Entity not found: %s", entity);
                 }
             }
             
@@ -188,24 +188,23 @@ public class JPAPlugin extends PlayPlugin {
                 org.apache.log4j.Logger.getLogger("org.hibernate.SQL").setLevel(Level.ALL);
             }
 
-            cfg.configure(properties);
-            cfg.setDataSource(DB.getDataSource(dbName));
-          
+            Thread thread = Thread.currentThread();
+            ClassLoader contextClassLoader = thread.getContextClassLoader();
+            thread.setContextClassLoader(Play.classloader);
             try {
-                Field field = cfg.getClass().getDeclaredField("overridenClassLoader");
-                field.setAccessible(true);
-                field.set(cfg, Play.classloader);
-            } catch (Exception e) {
-                Logger.error(e, "Error trying to override the hibernate classLoader (new hibernate version ???)");
-            }
-            
-            cfg.setInterceptor(new HibernateInterceptor());
+                cfg.configure(properties);
+                cfg.setDataSource(DB.getDataSource(dbName));
 
-            if (Logger.isTraceEnabled()) {
-                Logger.trace("Initializing JPA for %s...", dbName);
-            }
+                cfg.setInterceptor(new HibernateInterceptor());
 
-            JPA.emfs.put(dbName, cfg.buildEntityManagerFactory());
+                if (Logger.isTraceEnabled()) {
+                    Logger.trace("Initializing JPA for %s...", dbName);
+                }
+
+                JPA.emfs.put(dbName, cfg.buildEntityManagerFactory());
+            } finally {
+                if (thread != null) thread.setContextClassLoader(contextClassLoader);
+            }
         }
         JPQL.instance = new JPQL();
     }
@@ -303,7 +302,7 @@ public class JPAPlugin extends PlayPlugin {
     private TransactionalFilter txFilter = new TransactionalFilter("TransactionalFilter");
 
     @Override
-    public Filter getFilter() {
+    public Filter<Object> getFilter() {
       return txFilter;
     }
 

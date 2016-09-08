@@ -35,9 +35,7 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
 import com.mchange.v2.c3p0.ConnectionCustomizer;
 
 import play.db.DB.ExtendedDatasource;
-/**
- * The DB plugin
- */
+
 public class DBPlugin extends PlayPlugin {
 
     public static String url = "";
@@ -49,7 +47,7 @@ public class DBPlugin extends PlayPlugin {
             response.status = Http.StatusCode.FOUND;
             String serverOptions[] = new String[] { };
 
-            // For H2 embeded database, we'll also start the Web console
+            // For H2 embedded database, we'll also start the Web console
             if (h2Server != null) {
                 h2Server.stop();
             }
@@ -120,7 +118,7 @@ public class DBPlugin extends PlayPlugin {
                             Driver d = (Driver) Class.forName(driver, true, Play.classloader).newInstance();
                             DriverManager.registerDriver(new ProxyDriver(d));
                         } catch (Exception e) {
-                            throw new Exception("Database [" + dbName + "] Driver not found (" + driver + ")");
+                            throw new Exception("Database [" + dbName + "] Driver not found (" + driver + ")", e);
                         }
 
                         // Try the connection
@@ -307,7 +305,7 @@ public class DBPlugin extends PlayPlugin {
                 String host = m.group("host");
                 String parameters = m.group("parameters");
         		
-                Map<String, String> paramMap = new HashMap<String, String>();
+                Map<String, String> paramMap = new HashMap<>();
                 paramMap.put("useUnicode", "yes");
                 paramMap.put("characterEncoding", "UTF-8");
                 paramMap.put("connectionCollation", "utf8_general_ci");
@@ -408,26 +406,32 @@ public class DBPlugin extends PlayPlugin {
             this.driver = d;
         }
 
+        @Override
         public boolean acceptsURL(String u) throws SQLException {
             return this.driver.acceptsURL(u);
         }
 
+        @Override
         public Connection connect(String u, Properties p) throws SQLException {
             return this.driver.connect(u, p);
         }
 
+        @Override
         public int getMajorVersion() {
             return this.driver.getMajorVersion();
         }
 
+        @Override
         public int getMinorVersion() {
             return this.driver.getMinorVersion();
         }
 
+        @Override
         public DriverPropertyInfo[] getPropertyInfo(String u, Properties p) throws SQLException {
             return this.driver.getPropertyInfo(u, p);
         }
 
+        @Override
         public boolean jdbcCompliant() {
             return this.driver.jdbcCompliant();
         }
@@ -435,6 +439,7 @@ public class DBPlugin extends PlayPlugin {
         // Method not annotated with @Override since getParentLogger() is a new method
         // in the CommonDataSource interface starting with JDK7 and this annotation
         // would cause compilation errors with JDK6.
+        @Override
         public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
             try {
                 return (java.util.logging.Logger) Driver.class.getDeclaredMethod("getParentLogger").invoke(this.driver);
@@ -449,7 +454,7 @@ public class DBPlugin extends PlayPlugin {
         public static Map<String, Integer> isolationLevels;
 
         static {
-            isolationLevels = new HashMap<String, Integer>();
+            isolationLevels = new HashMap<>();
             isolationLevels.put("NONE", Connection.TRANSACTION_NONE);
             isolationLevels.put("READ_UNCOMMITTED", Connection.TRANSACTION_READ_UNCOMMITTED);
             isolationLevels.put("READ_COMMITTED", Connection.TRANSACTION_READ_COMMITTED);
@@ -457,6 +462,7 @@ public class DBPlugin extends PlayPlugin {
             isolationLevels.put("SERIALIZABLE", Connection.TRANSACTION_SERIALIZABLE);
         }
 
+        @Override
         public void onAcquire(Connection c, String parentDataSourceIdentityToken) {
             Integer isolation = getIsolationLevel();
             if (isolation != null) {
@@ -469,8 +475,13 @@ public class DBPlugin extends PlayPlugin {
             }
         }
 
+        @Override
         public void onDestroy(Connection c, String parentDataSourceIdentityToken) {}
+
+        @Override
         public void onCheckOut(Connection c, String parentDataSourceIdentityToken) {}
+
+        @Override
         public void onCheckIn(Connection c, String parentDataSourceIdentityToken) {}
 
         /**

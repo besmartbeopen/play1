@@ -40,7 +40,7 @@ public class Invoker {
      * @param invocation The code to run
      * @return The future object, to know when the task is completed
      */
-    public static Future<?> invoke(final Invocation invocation) {
+    public static Future<?> invoke(Invocation invocation) {
         Monitor monitor = MonitorFactory.getMonitor("Invoker queue size", "elmts.");
         monitor.add(executor.getQueue().size());
         invocation.waitInQueue = MonitorFactory.start("Waiting for execution");
@@ -53,7 +53,7 @@ public class Invoker {
      * @param millis The time to wait before, in milliseconds
      * @return The future object, to know when the task is completed
      */
-    public static Future<?> invoke(final Invocation invocation, long millis) {
+    public static Future<?> invoke(Invocation invocation, long millis) {
         Monitor monitor = MonitorFactory.getMonitor("Invocation queue", "elmts.");
         monitor.add(executor.getQueue().size());
         return executor.schedule(invocation, millis, TimeUnit.MILLISECONDS);
@@ -89,7 +89,7 @@ public class Invoker {
      */
     public static class InvocationContext {
 
-        public static ThreadLocal<InvocationContext> current = new ThreadLocal<InvocationContext>();
+        public static final ThreadLocal<InvocationContext> current = new ThreadLocal<>();
         private final List<Annotation> annotations;
         private final String invocationType;
 
@@ -99,7 +99,7 @@ public class Invoker {
 
         public InvocationContext(String invocationType) {
             this.invocationType = invocationType;
-            this.annotations = new ArrayList<Annotation>();
+            this.annotations = new ArrayList<>();
         }
 
         public InvocationContext(String invocationType, List<Annotation> annotations) {
@@ -114,7 +114,7 @@ public class Invoker {
 
         public InvocationContext(String invocationType, Annotation[]... annotations) {
             this.invocationType = invocationType;
-            this.annotations = new ArrayList<Annotation>();
+            this.annotations = new ArrayList<>();
             for (Annotation[] some : annotations) {
                 this.annotations.addAll(Arrays.asList(some));
             }
@@ -192,7 +192,7 @@ public class Invoker {
         }
 
         /**
-         * Init the call (especially usefull in DEV mode to detect changes)
+         * Init the call (especially useful in DEV mode to detect changes)
          */
         public boolean init() {
             Thread.currentThread().setContextClassLoader(Play.classloader);
@@ -266,15 +266,16 @@ public class Invoker {
         }
 
         private void withinFilter(play.libs.F.Function0<Void> fct) throws Throwable {
-          for( PlayPlugin plugin :  Play.pluginCollection.getEnabledPlugins() ) {
-               if (plugin.getFilter() != null)
-                plugin.getFilter().withinFilter(fct);
-           }
+          F.Option<PlayPlugin.Filter<Void>> filters = Play.pluginCollection.composeFilters();
+          if (filters.isDefined()) {
+            filters.get().withinFilter(fct);
+          }
         }
 
         /**
          * It's time to execute.
          */
+        @Override
         public void run() {
             if (waitInQueue != null) {
                 waitInQueue.stop();
@@ -285,6 +286,7 @@ public class Invoker {
                     before();
                     final AtomicBoolean executed = new AtomicBoolean(false);
                     this.withinFilter(new play.libs.F.Function0<Void>() {
+                        @Override
                         public Void apply() throws Throwable {
                             executed.set(true);
                             execute();
@@ -389,7 +391,7 @@ public class Invoker {
         Map<Future<?>, Invocation> queue;
 
         public WaitForTasksCompletion() {
-            queue = new ConcurrentHashMap<Future<?>, Invocation>();
+            queue = new ConcurrentHashMap<>();
             setName("WaitForTasksCompletion");
             setDaemon(true);
         }
@@ -398,6 +400,7 @@ public class Invoker {
             if (task instanceof Promise) {
                 Promise<V> smartFuture = (Promise<V>) task;
                 smartFuture.onRedeem(new F.Action<F.Promise<V>>() {
+                    @Override
                     public void invoke(Promise<V> result) {
                         executor.submit(invocation);
                     }
@@ -419,7 +422,7 @@ public class Invoker {
             while (true) {
                 try {
                     if (!queue.isEmpty()) {
-                        for (Future<?> task : new HashSet<Future<?>>(queue.keySet())) {
+                        for (Future<?> task : new HashSet<>(queue.keySet())) {
                             if (task.isDone()) {
                                 executor.submit(queue.get(task));
                                 queue.remove(task);
