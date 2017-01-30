@@ -16,7 +16,7 @@ public class StreamChunkAggregator extends SimpleChannelUpstreamHandler {
 
     private volatile HttpMessage currentMessage;
     private volatile OutputStream out;
-    private final static int maxContentLength = Integer.valueOf(Play.configuration.getProperty("play.netty.maxContentLength", "-1"));
+    private static final int maxContentLength = Integer.valueOf(Play.configuration.getProperty("play.netty.maxContentLength", "-1"));
     private volatile File file;
 
     /**
@@ -72,7 +72,7 @@ public class StreamChunkAggregator extends SimpleChannelUpstreamHandler {
                     currentMessage.setContent(new FileChannelBuffer(localFile));
                     this.out = null;
                     this.currentMessage = null;
-		            this.file.delete();
+                    this.file.delete();
                     this.file = null;
                     Channels.fireMessageReceived(ctx, currentMessage, e.getRemoteAddress());
                 }
