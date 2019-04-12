@@ -13,7 +13,7 @@ public class HibernateInterceptor extends EmptyInterceptor {
   public HibernateInterceptor() {
 
   }
-  
+
   @Override
   public int[] findDirty(Object o, Serializable id, Object[] arg2, Object[] arg3, String[] arg4, Type[] arg5) {
     if (o instanceof JPABase && !((JPABase) o).willBeSaved) {
@@ -28,7 +28,8 @@ public class HibernateInterceptor extends EmptyInterceptor {
             Object o = ((PersistentCollection) collection).getOwner();
             if (o instanceof JPABase) {
                 if (entities.get() != null) {
-                    return ((JPABase) o).willBeSaved || ((JPABase) entities.get()).willBeSaved;
+                    return ((JPABase) o).willBeSaved || (entities.get() instanceof JPABase
+                        && ((JPABase) entities.get()).willBeSaved);
                 } else {
                     return ((JPABase) o).willBeSaved;
                 }
@@ -45,7 +46,8 @@ public class HibernateInterceptor extends EmptyInterceptor {
             Object o = ((PersistentCollection) collection).getOwner();
             if (o instanceof JPABase) {
                 if (entities.get() != null) {
-                    return ((JPABase) o).willBeSaved || ((JPABase) entities.get()).willBeSaved;
+                    return ((JPABase) o).willBeSaved || (entities.get() instanceof JPABase
+                        && ((JPABase) entities.get()).willBeSaved);
                 } else {
                     return ((JPABase) o).willBeSaved;
                 }
@@ -63,7 +65,8 @@ public class HibernateInterceptor extends EmptyInterceptor {
             Object o = ((PersistentCollection) collection).getOwner();
             if (o instanceof JPABase) {
                 if (entities.get() != null) {
-                    return ((JPABase) o).willBeSaved || ((JPABase) entities.get()).willBeSaved;
+                    return ((JPABase) o).willBeSaved || (entities.get() instanceof JPABase
+                        && ((JPABase) entities.get()).willBeSaved);
                 } else {
                     return ((JPABase) o).willBeSaved;
                 }
